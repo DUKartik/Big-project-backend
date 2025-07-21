@@ -10,10 +10,12 @@ dotenv.config({
 /* *****************with importing DB (RECOMMENDED) *********** */
 
 // Async function give promises that why we are able to use .then and catch
+
+
 connectDB()
 .then(()=>{
-    app.listen(process.env.PORT,()=>{
-        console.log(`Server is running on Port : ${process.env.PORT}`);
+    app.listen(process.env.PORT || 3000,()=>{
+        console.log(`Server is running on Port : ${process.env.PORT || 3000}`);
     })
 })
 .catch((error)=>{
