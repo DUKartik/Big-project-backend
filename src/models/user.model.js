@@ -25,7 +25,7 @@ const userSchema= new mongoose.Schema(
             index:true,
         },
         avatar:{
-            type:String, //cloudinary Url
+            type:String, 
             required:true,
         },
         coverImage:{
@@ -48,9 +48,9 @@ const userSchema= new mongoose.Schema(
     },{timestamps:true}
 )
 
-userSchema.pre("save",async function (next) {
+userSchema.pre("save",async function (next) { //pre middleware
     if(this.isModified("password")){
-        this.password= bcrypt.hash(this.password,10)
+        this.password= await bcrypt.hash(this.password,10)
         next()
     }
 })
