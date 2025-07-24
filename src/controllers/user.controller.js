@@ -14,39 +14,45 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 // check for user creation and return response
 
 const registerUser= asyncHandler( async(req,res)=>{ // created method
-    const {username,email,fullname,password}=req.body; //destructuring user data which we get from (form,json) using req.body
-    console.log(username);
+    const {username,email,fullName,password}=req.body; //destructuring user data which we get from (form,json) using req.body
+    // console.log(username);
 
     if(
-        [fullname,username,email,password].some((field)=>
+        [fullName,username,email,password].some((field)=>
             field?.trim() === "")
     ) {
         throw new ApiError(400,"All fields are required")
     }
     // instead of this all what we have done above we can also use if/else method for all fullname,username...
 
-    if(User.find({username})){
+    const UsernameAlreadyExist=await User.findOne({username});
+    const emailAlreadyExist=await User.findOne({email});
+
+    if(UsernameAlreadyExist){
         throw new ApiError(405,"User with this username already exist");
-    }else if(User.find({email})){
+    }else if(emailAlreadyExist){
         throw new ApiError(405,"User with this email already exist");
     }
 
     // now for images
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar file is required");
     }
     
     const avatar=await uploadOnCloudinary(avatarLocalPath);
-    const coverImage=await uploadOnCloudinary(coverImageLocalPath);
+    let coverImage=null;
+    if(coverImageLocalPath){
+        coverImage=await uploadOnCloudinary(coverImageLocalPath);
+    }
     if(!avatar){
         throw new ApiError(400,"avatar file is required");
     }
 
     const user=await User.create({
-        fullname,
+        fullName,
         avatar:avatar.url,
         coverImage: coverImage?.url || "",
         email,
