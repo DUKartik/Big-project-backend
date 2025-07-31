@@ -3,7 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
- // steps are:-
+ // steps for registerUser are:-
 // get user details from user
 // validate - not empty,email format
 // check if user already exists:- by email
@@ -13,13 +13,33 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 // create an user object
 // check for user creation and return response
 
+const generateAccessAndRefreshToken=async(userId)=>
+{
+    try {
+        const user=User.findById(userId);
+        const accessToken=user.generateAccessToken();
+        const refreshToken=user.generateRefreshToken();
+        user.refreshToken=refreshToken;
+        await user.save({validateBeforeSave:false});
+        return {accessToken,refreshToken};
+
+    } catch (error) {
+        throw new ApiError(508,"Error while generating Access and refresh token");
+    }
+}
+
 const registerUser= asyncHandler( async(req,res)=>{ // created method
     const {username,email,fullName,password}=req.body; //destructuring user data which we get from (form,json) using req.body
     // console.log(username);
 
+    username=username?.trim();
+    fullName=fullName?.trim();
+    email=email?.trim();
+    password=password?.trim();
+
     if(
         [fullName,username,email,password].some((field)=>
-            field?.trim() === "")
+            field === "")
     ) {
         throw new ApiError(400,"All fields are required")
     }
@@ -75,4 +95,81 @@ const registerUser= asyncHandler( async(req,res)=>{ // created method
     
 })
 
-export {registerUser};
+//steps for loginUser are:-
+// get username/email and password
+// validate that fields are not empty
+// find username/email and check if exist match its password after bcrypt
+// generate access token and refresh token
+const loginUser=asyncHandler( async(req,res)=>{
+    const {username,email,password}=req.body;
+
+    username=username?.trim();
+    email=email?.trim();
+    password=password?.trim();
+
+
+    if((!username ||!email) && !password){
+        throw new ApiError(408,"All field are required");
+    }
+
+    const user=await User.findOne({
+        $or:[{username},{email}]
+    });
+    if(!user){
+        throw new ApiError(404,"No account found with this email or username. Please sign up first.")
+    }
+    const isPasswordValid= await user.isPasswordValid(password);
+    if(!isPasswordValid){
+        throw new ApiError(405,"Wrong password");
+    }
+    const {refreshToken,accessToken}=await generateAccessAndRefreshToken(user._id);
+    // here in user object refreshtoken is blank ,but  refreshtoken updated on database
+
+    const loggedInUser=await User.findOne(user._id).select("-password -refreshToken");
+
+    const option={
+        httpOnly:true,
+        secure:true
+    }
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,option)
+    .cookie("refreshToken",refreshToken,option)
+    .json(
+        new ApiResponse(200,{
+            user:accessToken,refreshToken,loggedInUser// not save just for learning
+        },"Loggedin Successfully")
+    )
+    
+})
+
+// steps for logout user are :-
+// clear cookie and also clear access token from database
+const logoutUser=asyncHandler(async (req,res) => {
+    await User.findByIdAndUpdate(req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+            }
+        },
+        {
+            new:true
+        }
+    )
+    const option={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",option)
+    .clearCookie("refreshToken",option)
+    .json(new ApiResponse(200,{},"user logged Out"))
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+};
