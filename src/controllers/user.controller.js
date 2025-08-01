@@ -16,7 +16,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 const generateAccessAndRefreshToken=async(userId)=>
 {
     try {
-        const user=User.findById(userId);
+        const user=await User.findById(userId);
         const accessToken=user.generateAccessToken();
         const refreshToken=user.generateRefreshToken();
         user.refreshToken=refreshToken;
@@ -29,7 +29,7 @@ const generateAccessAndRefreshToken=async(userId)=>
 }
 
 const registerUser= asyncHandler( async(req,res)=>{ // created method
-    const {username,email,fullName,password}=req.body; //destructuring user data which we get from (form,json) using req.body
+    let {username,email,fullName,password}=req.body; //destructuring user data which we get from (form,json) using req.body
     // console.log(username);
 
     username=username?.trim();
@@ -101,13 +101,13 @@ const registerUser= asyncHandler( async(req,res)=>{ // created method
 // find username/email and check if exist match its password after bcrypt
 // generate access token and refresh token
 const loginUser=asyncHandler( async(req,res)=>{
-    const {username,email,password}=req.body;
+    let {username,email,password}=req.body || {};
 
     username=username?.trim();
     email=email?.trim();
     password=password?.trim();
 
-
+    
     if((!username ||!email) && !password){
         throw new ApiError(408,"All field are required");
     }
@@ -115,21 +115,23 @@ const loginUser=asyncHandler( async(req,res)=>{
     const user=await User.findOne({
         $or:[{username},{email}]
     });
+
     if(!user){
         throw new ApiError(404,"No account found with this email or username. Please sign up first.")
     }
-    const isPasswordValid= await user.isPasswordValid(password);
+    const isPasswordValid= await user.isPasswordCorrect(password);
+
     if(!isPasswordValid){
         throw new ApiError(405,"Wrong password");
     }
     const {refreshToken,accessToken}=await generateAccessAndRefreshToken(user._id);
     // here in user object refreshtoken is blank ,but  refreshtoken updated on database
 
-    const loggedInUser=await User.findOne(user._id).select("-password -refreshToken");
+    const loggedInUser=await User.findById(user._id).select("-password -refreshToken");
 
     const option={
         httpOnly:true,
-        secure:true
+        secure:false // set it to true after creating frontend
     }
     return res
     .status(200)
@@ -158,7 +160,7 @@ const logoutUser=asyncHandler(async (req,res) => {
     )
     const option={
         httpOnly:true,
-        secure:true
+        secure:false  //after creating frontend set it to true
     }
 
     return res
