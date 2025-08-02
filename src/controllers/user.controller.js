@@ -209,9 +209,83 @@ const refreshAccessToken =asyncHandler(async(req,res)=>{
     }
 
 })
+
+const changeCurrentPassword = asyncHandler(async(req,res)=>{
+    let {oldPassword,newPassword,confirmPassword} = req.body;
+    oldPassword=oldPassword?.trim;
+    newPassword=newPassword?.trim;
+    confirmPassword=confirmPassword?.trim;
+
+    if((confirmPassword === newPassword)){
+        throw new ApiError(400,"confirmPassword and newPassword should match");
+    }
+
+    const user=await User.findById(req.user?._id);
+
+    const isPasswordCorrect= await user.isPasswordCorrect(oldPassword);
+
+    if(!isPasswordCorrect) {
+        throw new ApiError(400,"Invalid Password");
+    }
+
+    user.password=newPassword;
+    await user.save({validateBeforeSave:false});
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,{},"Password has been changed")
+    )
+
+})
+
+const getCurrentUser = asyncHandler(async(req,res)=>{
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,req.user,"current user fetched successfully")
+    )
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    let {email,fullName} =req.body ||{};
+    email=email?.trim();
+    fullName=fullName?.trim();
+
+    if(!fullName && !email){
+        throw new ApiError(400,"either email or fullName is must required");
+    }
+    // const user=await User.findById(req.user?._id).select("-password");
+    // if(!user){
+    //     throw new ApiError(401,"Unauthorized Access Suspected");   this work is already done by middleware in auth.middleware.js
+    // }                                                                just add auth middleware while defining route
+
+    const user=req.user;  //and as we know auth middleware have done database search already and save it into req.user
+    if(email){
+        if(user.email === email){
+            throw new ApiError(400,"You have entered the same email as before");
+        }
+        const userExist=await User.findOne({email});
+        if(userExist){
+            throw new ApiError(400,"Entered email already exist");
+        }
+        user.email=email;
+    }
+    if(fullName)user.fullName=fullName;
+    await user.save();
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,{user},"text details updated successfully"),
+    )
+})
 export {
     registerUser,
     loginUser,
+    getCurrentUser,
+    updateAccountDetails,
+    changeCurrentPassword,
     refreshAccessToken,
     logoutUser
 };
