@@ -272,7 +272,7 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
         user.email=email;
     }
     if(fullName)user.fullName=fullName;
-    await user.save();
+    await user.save({validateBeforeSave:false});
 
     return res
     .status(200)
@@ -280,9 +280,65 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
         new ApiResponse(200,{user},"text details updated successfully"),
     )
 })
+
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+    const avatarLocalPath = req.file?.path;
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avatar file missing");
+    }
+
+    const avatar =await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar.url){
+        throw new ApiError(400,"Something went wrong while uploading avatar on cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{avatar:avatar.url},
+        },
+        {new:true}
+    ).select("-password -refreshToken")
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"Avatar Updated Successfully")
+    )
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res)=>{
+    const coverImageLocalPath = req.file?.path;
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"Avatar file missing");
+    }
+
+    const avatar =await uploadOnCloudinary(coverImageLocalPath);
+
+    if(!coverImage.url){
+        throw new ApiError(400,"Something went wrong while uploading coverImage on cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{coverImage:coverImage.url},
+        },
+        {new:true}
+    ).select("-password -refreshToken")
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"coverImage Updated Successfully")
+    )
+})
 export {
     registerUser,
     loginUser,
+    updateUserAvatar,
+    updateUserCoverImage,
     getCurrentUser,
     updateAccountDetails,
     changeCurrentPassword,
