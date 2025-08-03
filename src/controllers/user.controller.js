@@ -293,13 +293,17 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Something went wrong while uploading avatar on cloudinary");
     }
 
+    if(req.user.avatar){
+        await cloudinary.uploader.destroy(req.user.avatar);
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user._id,
         {
             $set:{avatar:avatar.url},
         },
         {new:true}
-    ).select("-password -refreshToken")
+    ).select("-password -refreshToken");
     
     return res
     .status(200)
@@ -320,6 +324,9 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Something went wrong while uploading coverImage on cloudinary");
     }
 
+    if(req.user.coverImage){
+        await cloudinary.uploader.destroy(req.user.coverImage);
+    }
     const user = await User.findByIdAndUpdate(
         req.user._id,
         {
