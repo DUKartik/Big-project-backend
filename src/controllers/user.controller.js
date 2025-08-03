@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary,deleteOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken"
 
  // steps for registerUser are:-
@@ -153,7 +153,7 @@ const logoutUser=asyncHandler(async (req,res) => {
     await User.findByIdAndUpdate(req.user._id,
         {
             $set:{
-                refreshToken:undefined
+                refreshToken:null
             }
         },
         {
@@ -212,11 +212,11 @@ const refreshAccessToken =asyncHandler(async(req,res)=>{
 
 const changeCurrentPassword = asyncHandler(async(req,res)=>{
     let {oldPassword,newPassword,confirmPassword} = req.body;
-    oldPassword=oldPassword?.trim;
-    newPassword=newPassword?.trim;
-    confirmPassword=confirmPassword?.trim;
+    oldPassword=oldPassword?.trim();
+    newPassword=newPassword?.trim();
+    confirmPassword=confirmPassword?.trim();
 
-    if((confirmPassword === newPassword)){
+    if(!(confirmPassword === newPassword)){
         throw new ApiError(400,"confirmPassword and newPassword should match");
     }
 
@@ -294,7 +294,8 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
     }
 
     if(req.user.avatar){
-        await cloudinary.uploader.destroy(req.user.avatar);
+        console.log("deleting process should occur below");
+        await deleteOnCloudinary(req.user.avatar);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -318,14 +319,14 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Avatar file missing");
     }
 
-    const avatar =await uploadOnCloudinary(coverImageLocalPath);
+    const coverImage =await uploadOnCloudinary(coverImageLocalPath);
 
     if(!coverImage.url){
         throw new ApiError(400,"Something went wrong while uploading coverImage on cloudinary");
     }
 
     if(req.user.coverImage){
-        await cloudinary.uploader.destroy(req.user.coverImage);
+        await deleteOnCloudinary(req.user.coverImage);
     }
     const user = await User.findByIdAndUpdate(
         req.user._id,

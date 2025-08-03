@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { response } from 'express';
 import fs from "fs";
 
 
@@ -25,4 +26,21 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-export {uploadOnCloudinary};
+const deleteOnCloudinary = async(cloudinaryUrl)=>{
+    try {
+        const parts = cloudinaryUrl.split("/");
+        const filename = parts.slice(parts.indexOf("upload") + 2).join("/");
+        const public_id =filename.replace(/\.[^/.]+$/, "");
+        //above three lines use to extract puclic_id from url
+        // ex url -> https://res.cloudinary.com/xyz/image/upload/v1754214043/abcd.jpg then, public_id->"/abcd"
+        // all of things after upload/version and leave .abc 
+
+        cloudinary.uploader.destroy(public_id);
+        return response;
+    } catch (error) {
+        console.log("Something went wrong while deleting file on cloudinary");
+        return null;
+    }
+}
+
+export {uploadOnCloudinary,deleteOnCloudinary};
