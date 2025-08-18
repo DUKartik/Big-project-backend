@@ -1,6 +1,9 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { response } from 'express';
 import fs from "fs";
+import { ApiError } from './ApiError.js';
+import { log } from 'console';
+import { PassThrough } from 'stream';
 
 
 cloudinary.config({ 
@@ -8,6 +11,18 @@ cloudinary.config({
         api_key: process.env.CLOUDINARY_API_KEY, 
         api_secret: process.env.CLOUDINARY_API_SECRET // Click 'View API Keys' above to copy your API secret
 });
+
+const getPublicId = (cloudinaryUrl)=>{
+    let cleanUrl=cloudinaryUrl.split("?")[0];
+
+    let parts = cleanUrl.split("/upload/");
+    if(parts.length<2)return null;
+    let publicIdWithExt = parts[1]; // everything after /upload/
+    let publicIdWithoutVersion = publicIdWithExt.replace(/^v[0-9]+\//, ""); // remove version prefix
+    let publicId = publicIdWithoutVersion.replace(/\.[^/.]+$/, ""); // remove file extension
+
+    return publicId; // e.g. "folder/avatar_abc"
+}
 
 const uploadOnCloudinary = async (localFilePath) => {
     try{
@@ -21,26 +36,25 @@ const uploadOnCloudinary = async (localFilePath) => {
         return response;
     }
     catch{
-        fs.unlink(localFilePath); //remove locally saved file
+        fs.unlinkSync(localFilePath); //remove locally saved file
         return null;
     }
 }
 
-const deleteOnCloudinary = async(cloudinaryUrl)=>{
-    try {
-        const parts = cloudinaryUrl.split("/");
-        const filename = parts.slice(parts.indexOf("upload") + 2).join("/");
-        const public_id =filename.replace(/\.[^/.]+$/, "");
-        //above three lines use to extract puclic_id from url
-        // ex url -> https://res.cloudinary.com/xyz/image/upload/v1754214043/abcd.jpg then, public_id->"/abcd"
-        // all of things after upload/version and leave .abc 
+const deleteOnCloudinary = async (cloudinaryUrl, resourceType = "image") => {
+  try {
+    const public_id = getPublicId(cloudinaryUrl);
+    if (!public_id) throw new ApiError(500, "Invalid Cloudinary URL");
 
-        cloudinary.uploader.destroy(public_id);
-        return response;
-    } catch (error) {
-        console.log("Something went wrong while deleting file on cloudinary");
-        return null;
-    }
-}
+    const result = await cloudinary.uploader.destroy(public_id, {
+      resource_type: resourceType, // must match what was used in upload
+    });
 
-export {uploadOnCloudinary,deleteOnCloudinary};
+    console.log("Cloudinary delete result:", result);
+    return result;
+  } catch {
+    return null;
+  }
+};
+
+export {uploadOnCloudinary,deleteOnCloudinary,getPublicId};
