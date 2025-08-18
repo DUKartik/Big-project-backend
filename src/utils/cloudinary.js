@@ -1,9 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { response } from 'express';
 import fs from "fs";
 import { ApiError } from './ApiError.js';
-import { log } from 'console';
-import { PassThrough } from 'stream';
+
 
 
 cloudinary.config({ 
