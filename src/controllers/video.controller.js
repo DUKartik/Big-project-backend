@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { ApiError } from "../utils/ApiError.js"
 import { uploadOnCloudinary,getPublicId,deleteOnCloudinary } from "../utils/cloudinary.js"
+import { parse } from "dotenv"
 
 const publishVideo = asyncHandler(async (req,res)=>{
     let {title ,description} = req.body;
@@ -57,7 +58,52 @@ const getVideoById = asyncHandler(async (req,res)=>{
 })
 
 const getAllVideos =asyncHandler(async (req,res)=>{
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+    const pageNum = parseInt(page,10) || 1;
+    const limitNum = parseInt(limit,10) || 10;
+    const skip = (pageNum-1)*limitNum;
 
+    let filter = {}; 
+    if (query) filter.title = { $regex: query, $options: 'i' };
+    if (userId) filter.userId = userId;
+
+    let sort = {};
+    if (sortBy) {
+        sort[sortBy] = sortType === 'asc' ? 1 : -1;
+    } else {
+        sort = { uploadDate: -1 };
+    }
+
+    const videos =await Video.aggregatePaginate([
+        {
+            $match:{filter},
+            $sort:{sort},
+            $skip:{skip},
+            $project:{
+                title:1,
+                views:1,
+                Owner:1,
+                videoFile:1,
+                thumbnail:1,
+                duration:1,
+                isPublished:1
+            }
+        }
+    ])
+
+    const totalDocs = await Video.countDocuments(filter);
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,{
+            page: pageNum,
+            limit: limitNum,
+            totalDocs,
+            totalPages: Math.ceil(totalDocs / limitNum),
+            videos
+        })
+    )
 })
 
 const updateVideo = asyncHandler(async (req,res)=>{
@@ -97,9 +143,46 @@ const updateVideo = asyncHandler(async (req,res)=>{
     )
 })
 
+const deleteVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    const video = await Video.findById(videoId);
+    if(!video){
+        throw new ApiError(404,"video not found in the database");
+    }
+    const cloudinaryVideoLink = video?.videoFile;
+    if(cloudinaryVideoLink){
+        const publicId = await getPublicId(cloudinaryVideoLink);
+        await deleteOnCloudinary(publicId);
+    }
+    await video.deleteOne();
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,video,"video deleted successfully")
+    )
+})
+
+const togglePublishStatus = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    const video = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{isPublished:(isPublished)?0:1}
+        },
+        {new:true}
+    );
+    return res
+    .status(200)
+    .json(
+        new ApiError(200,"Publish status has been Succesfully changed")
+    )
+})
+
 export{
     publishVideo,
     getAllVideos,
     getVideoById,
-    updateVideo
+    updateVideo,
+    deleteVideo,
+    togglePublishStatus
 }
