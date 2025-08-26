@@ -12,6 +12,7 @@ app.use(cookieParser()); // use to store read cookie on user browser
 
 //routes import
 import userRouter from './routes/user.route.js'
+import videoRouter from './routes/video.route.js'
 
 //routes declaration
 
@@ -26,4 +27,6 @@ app.use("/api/v1/users",userRouter); // in previous projects we were using the r
 // for signup ,let say http://xyz.com/users/signup -> similarly we can make it for login also
 // for login , http://xyz.com/users/login -> Basically we are using two routes for signup or login
 // but industry level practice is http://xyz.com/api/version/users/...
+
+app.use("/api/v1/videos",videoRouter);
 export {app};
