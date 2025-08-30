@@ -75,11 +75,10 @@ const getAllVideos =asyncHandler(async (req,res)=>{
     }
 
     const videos =await Video.aggregatePaginate([
-        {
-            $match:{filter},
-            $sort:{sort},
-            $skip:{skip},
-            $project:{
+        {$match:filter},
+        {$sort:sort},
+        {$skip:skip},
+        {$project:{
                 title:1,
                 views:1,
                 Owner:1,
@@ -111,7 +110,7 @@ const updateVideo = asyncHandler(async (req,res)=>{
     const thumbnailLocalPath = req.files?.path;
     let {title,description} = req.body || {};
     title=title?.trim();
-    if(!title || !description || !thumbnailLocalPath){
+    if(!title && !description && !thumbnailLocalPath){
         throw new ApiError(400,"atleast one of the fields are required")
     }
 
@@ -166,15 +165,23 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     const video = await Video.findByIdAndUpdate(
         videoId,
-        {
-            $set:{isPublished:(isPublished)?0:1}
-        },
+        [
+            {
+                $set:{
+                    isPublished:{$not:"$isPublished"}
+                }
+            }
+        ],
         {new:true}
     );
+    if(!video){
+        throw new ApiError(404,"video not found")
+    }
+    
     return res
     .status(200)
     .json(
-        new ApiError(200,"Publish status has been Succesfully changed")
+        new ApiResponse(200,video,"Publish status has been Successfully changed")
     )
 })
 

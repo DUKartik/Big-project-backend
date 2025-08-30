@@ -27,9 +27,9 @@ router.route("/uploadVideo").post(
         }
     ])
     ,publishVideo);
-router.route("/getVideoById").get(getVideoById);
-router.route("/updateVideoDetails").patch(verifyJWT,upload.single("thumbnail"),updateVideo);
-router.route("/delete-video").delete(verifyJWT,deleteVideo);
-router.route("/togglePublishStatus").patch(verifyJWT,togglePublishStatus);
+router.route("/c/:videoId").get(getVideoById);
+router.route("/c/:videoId").patch(verifyJWT,upload.single("thumbnail"),updateVideo);
+router.route("/c/:videoId").delete(verifyJWT,deleteVideo);
+router.route("/toggle/:videoId").patch(verifyJWT,togglePublishStatus);
 
 export default router;
