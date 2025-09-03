@@ -10,6 +10,9 @@ import { ApiError } from "../utils/ApiError.js";
 const toggleSubscription = asyncHandler(async (req,res)=>{
     const {channelId} =req.params;
     const user = req.user;
+    if(user._id==channelId){
+        throw new ApiError("Sorry,but you can not subscribe your own channel");
+    }
     
     const channel = await User.findById(channelId);
     if(!channel){
@@ -38,6 +41,10 @@ const toggleSubscription = asyncHandler(async (req,res)=>{
 
 const getUserChannelSubscribers = asyncHandler(async (req,res)=>{
     const {channelId} = req.params;
+    const user =req.user;
+    if(user._id!=channelId){
+        throw new ApiError("UnAuthorized Access, Only Owner can Access this feature");
+    }
     const channel = await User.findById(channelId);
     if(!channel){
         throw new ApiError(404,"Channel Not found");
@@ -53,11 +60,15 @@ const getUserChannelSubscribers = asyncHandler(async (req,res)=>{
 
 const getSubscribedChannels = asyncHandler(async(req,res)=>{
     const {subscriberId} =req.params;
-    const user = await User.findById(subscriberId);
-    if(!user){
+    const user = req.user;
+    if(user._id!=subscriberId){
+        throw new ApiError("UnAuthorized Access, Only Owner can Access this feature");
+    }
+    const subscriber = await User.findById(subscriberId);
+    if(!subscriber){
         throw new ApiError(404,"User not found");
     }
-    const channels = await Subscription.find({subscriber:user._id}).select({channel:1});
+    const channels = await Subscription.find({subscriber:subscriber._id}).select({channel:1});
 
     return res
     .status(200)
