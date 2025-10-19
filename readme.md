@@ -54,5 +54,3 @@ Other important files:
 - Like and comment functionality.
 - Playlist management.
 - Additional features to follow.
-
----
