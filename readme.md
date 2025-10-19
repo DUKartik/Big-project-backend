@@ -56,12 +56,3 @@ Other important files:
 - Additional features to follow.
 
 ---
-
-## **Learning Outcomes**
-- Structuring a scalable backend codebase.
-- Implementing JWT-based authentication with access & refresh tokens.
-- Handling file uploads with Multer and Cloudinary.
-- Using Mongoose aggregation pipelines for complex queries.
-- Building reusable middleware and utility functions.
-
----
