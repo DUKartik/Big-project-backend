@@ -38,19 +38,18 @@ Other important files:
 
 ## **Implemented Features**
 1. **User Registration** – Supports avatar and cover image uploads along with other text details.
-2. **Login** – Authenticate with either email or username plus password.
-3. **Logout**
-4. **Profile Updates** – Change email, avatar image, and cover image.
-5. **Channel Profile Details** – Fetch subscriber count and subscriptions using Mongoose aggregation pipelines.
-6. **Token Refresh** – Issue new access tokens when expired by validating refresh tokens stored in both the database and cookies.
-7. **Password Change**
-8. **Subscribe to a Channel**
-9. **Watch History Tracking**
+2. **Login/Logout**
+3. **Profile Updates** – Change email, avatar image, and cover image.
+4. **Channel Profile Details** – Fetch subscriber count and subscriptions using Mongoose aggregation pipelines.
+5. **Token Refresh** – Issue new access tokens when expired by validating refresh tokens stored in both the database and cookies.
+6. **Subscribe to a Channel**
+7. **Watch History Tracking**
+8. **CRUD Operations on Videos**
+9. **Get Content Idea Feature**
 
 ---
 
 ## **In-Progress Features**
-- Video upload controller.
 - Like and comment functionality.
 - Playlist management.
 - Additional features to follow.
