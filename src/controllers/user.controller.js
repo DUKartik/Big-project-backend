@@ -349,17 +349,23 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
 })
 
 const getUserChannelProfile = asyncHandler(async(req,res)=>{
-    let {username}=req.params;
+    let {username,userId}=req.query;
     username =username?.trim();
-    if(!username){
-        throw ApiError(400,"username is missing");
+    userId=userId?.trim();
+
+    if(!username && !userId){
+        throw new ApiError(400,"either username or userId is required");
     }
+
+    let match = {};
+    if (username) {
+        match.username = username.toLowerCase();
+    } else if (userId) {
+        match._id = new mongoose.Types.ObjectId(userId);
+    }
+
     const channel=await User.aggregate([
-        {
-            $match:{
-                username:username?.toLowerCase()
-            }
-        },
+        {$match:match},
         {
             $lookup:{
                 from:"subscriptions",
@@ -428,7 +434,7 @@ const getWatchHistory =asyncHandler(async (req,res)=>{
             $lookup:{
                 from:"videos",
                 localField:"watchHistory",
-                foreignField:_id,
+                foreignField:"_id",
                 as:"watchHistory",
                 pipeline:[
                     {

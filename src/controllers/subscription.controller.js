@@ -61,8 +61,8 @@ const getUserChannelSubscribers = asyncHandler(async (req,res)=>{
 const getSubscribedChannels = asyncHandler(async(req,res)=>{
     const {subscriberId} =req.params;
     const user = req.user;
-    if(user._id!=subscriberId){
-        throw new ApiError("UnAuthorized Access, Only Owner can Access this feature");
+    if(user._id.toString()!=subscriberId){
+        throw new ApiError(403,"UnAuthorized Access, Only Owner can Access this feature");
     }
     const subscriber = await User.findById(subscriberId);
     if(!subscriber){

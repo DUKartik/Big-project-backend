@@ -13,7 +13,8 @@ app.use(cookieParser()); // use to store read cookie on user browser
 //routes import
 import userRouter from './routes/user.route.js'
 import videoRouter from './routes/video.route.js'
-
+import subscriptionRouter from './routes/subscription.route.js'
+import geminiRouter from './routes/gemini.route.js'
 //routes declaration
 
 app.get('/', (req, res) => {
@@ -29,4 +30,7 @@ app.use("/api/v1/users",userRouter); // in previous projects we were using the r
 // but industry level practice is http://xyz.com/api/version/users/...
 
 app.use("/api/v1/videos",videoRouter);
+
+app.use("/api/v1/subscriptions",subscriptionRouter);
+app.use("/api/v1/gemini",geminiRouter);
 export {app};

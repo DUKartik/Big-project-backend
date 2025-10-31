@@ -8,7 +8,7 @@ import {
         togglePublishStatus
 } from "../controllers/video.controller.js"
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT,optionalAuth } from "../middlewares/auth.middleware.js";
 
 const router =Router();
 
@@ -27,7 +27,7 @@ router.route("/uploadVideo").post(
         }
     ])
     ,publishVideo);
-router.route("/c/:videoId").get(getVideoById);
+router.route("/c/:videoId").get(optionalAuth,getVideoById);
 router.route("/c/:videoId").patch(verifyJWT,upload.single("thumbnail"),updateVideo);
 router.route("/c/:videoId").delete(verifyJWT,deleteVideo);
 router.route("/toggle/:videoId").patch(verifyJWT,togglePublishStatus);

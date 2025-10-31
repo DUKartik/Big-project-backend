@@ -1,9 +1,11 @@
 import {Video} from "../models/video.model.js"
+import { User } from "../models/user.model.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { ApiError } from "../utils/ApiError.js"
 import { uploadOnCloudinary,getPublicId,deleteOnCloudinary } from "../utils/cloudinary.js"
 import { parse } from "dotenv"
+import mongoose from "mongoose"
 
 const publishVideo = asyncHandler(async (req,res)=>{
     let {title ,description} = req.body;
@@ -36,7 +38,7 @@ const publishVideo = asyncHandler(async (req,res)=>{
             title,
             description,
             duration:videoFile.duration,
-            owner:req.user,
+            Owner:req.user._id,
         }
     )
 
@@ -49,7 +51,24 @@ const publishVideo = asyncHandler(async (req,res)=>{
 
 const getVideoById = asyncHandler(async (req,res)=>{
     const {videoId} = req.params;
-    const video= await Video.findById(videoId);
+    const video = await Video.findByIdAndUpdate(
+        videoId,
+        { $inc: { views: 1 } },
+        { new: true }
+    );
+
+    if (!video) {
+        throw new ApiError(404, "Video not found");
+    }
+
+    const userId = req.user?._id;
+    if (userId) {
+        await User.findByIdAndUpdate(
+            userId,
+            { $addToSet: { watchHistory: videoId } } 
+        );
+    }
+
     return res
     .status(200)
     .json(
@@ -65,7 +84,7 @@ const getAllVideos =asyncHandler(async (req,res)=>{
 
     let filter = {}; 
     if (query) filter.title = { $regex: query, $options: 'i' };
-    if (userId) filter.userId = userId;
+    if (userId) filter.Owner = new mongoose.Types.ObjectId(userId);
 
     let sort = {};
     if (sortBy) {
@@ -78,6 +97,7 @@ const getAllVideos =asyncHandler(async (req,res)=>{
         {$match:filter},
         {$sort:sort},
         {$skip:skip},
+        {$limit: limitNum},
         {$project:{
                 title:1,
                 views:1,
@@ -107,7 +127,7 @@ const getAllVideos =asyncHandler(async (req,res)=>{
 
 const updateVideo = asyncHandler(async (req,res)=>{
     const {videoId} = req.params;
-    const thumbnailLocalPath = req.files?.path;
+    const thumbnailLocalPath = req.file?.path;
     let {title,description} = req.body || {};
     title=title?.trim();
     if(!title && !description && !thumbnailLocalPath){
