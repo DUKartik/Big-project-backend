@@ -1,6 +1,6 @@
 <h1>BACKEND MASTERY WITH HITESH CHOUDHARY</h1>
 
-# Clonetube – Backend of a YouTube-like Application
+# Gosocial – Social Media Video Sharing Platform
 
 This project is focused on understanding and building the backend of YouTube-like applications.  
 It is developed with **industry-standard best practices** as guided by Hitesh Choudhary, with additional improvements and modifications based on my own understanding.
@@ -46,10 +46,12 @@ Other important files:
 7. **Watch History Tracking**
 8. **CRUD Operations on Videos**
 9. **Get Content Idea Feature**
-
----
-
+10.**Like Functionality**-Users can like/unlike videos and comments.
+    Likes count is dynamically updated using Mongoose operations and aggregation.
+11.**Comment Functionality**-Users can add comments, reply to comments, delete/edit their own comments,
+     and fetch threaded comment structures.
+     
 ## **In-Progress Features**
-- Like and comment functionality.
 - Playlist management.
+- Notifications system.
 - Additional features to follow.
